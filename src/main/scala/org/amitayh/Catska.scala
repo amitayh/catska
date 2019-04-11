@@ -61,7 +61,7 @@ object Catska {
     }
   }
 
-  def consumer[F[_]: Async, K, V](topic: Topic[K, V], props: Properties): Resource[F, Consumer[F, K, V]] = Resource {
+  def consumer[F[_]: Sync, K, V](topic: Topic[K, V], props: Properties): Resource[F, Consumer[F, K, V]] = Resource {
     val create = Sync[F].delay(new KafkaConsumer(props, topic.keyDeserializer, topic.valueDeserializer))
     create.map { consumer =>
       val close = Sync[F].delay(consumer.close())
@@ -69,7 +69,7 @@ object Catska {
     }
   }
 
-  def subscribe[F[_]: Async, K, V](topic: Topic[K, V], props: Properties): Stream[F, (K, V)] =
+  def subscribe[F[_]: Sync, K, V](topic: Topic[K, V], props: Properties): Stream[F, (K, V)] =
     Stream.resource(consumer[F, K, V](topic, props)).flatMap(_.subscribe(topic))
 
 }
