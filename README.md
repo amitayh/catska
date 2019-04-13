@@ -2,7 +2,7 @@
 
 A thin functional wrapper for Apache Kafka with [Cats](https://typelevel.org/cats/) and [FS2](https://fs2.io/).
 
-All operations are pure, resource safe and asynchronous. The API surface is very minimal,
+All operations are pure and resource safe. The API surface is very minimal,
 if you need more control you should probably use a different library.
 
 ## Consuming messages

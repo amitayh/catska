@@ -5,6 +5,8 @@ import java.util.Collections.singletonList
 import java.util.Properties
 
 import cats.effect._
+import cats.effect.concurrent.Semaphore
+import cats.syntax.apply._
 import cats.syntax.functor._
 import fs2._
 import org.apache.kafka.clients.consumer._
@@ -45,10 +47,10 @@ object Catska {
   }
 
   object Consumer {
-    def apply[F[_]: Sync, K, V](consumer: KafkaConsumer[K, V]): Consumer[F, K, V] =
-      (topic: Topic[K, V]) =>  for {
-        _ <- Stream.eval(Sync[F].delay(consumer.subscribe(singletonList(topic.name))))
-        records <- Stream.repeatEval(Sync[F].delay(consumer.poll(Duration.ofSeconds(1))))
+    def apply[F[_]: Sync, K, V](consumer: KafkaConsumer[K, V], semaphore: Semaphore[F]): Consumer[F, K, V] =
+      (topic: Topic[K, V]) => for {
+        _ <- Stream.eval(semaphore.withPermitDelay(consumer.subscribe(singletonList(topic.name))))
+        records <- Stream.repeatEval(semaphore.withPermitDelay(consumer.poll(Duration.ofSeconds(1))))
         record <- Stream.emits(records.iterator.asScala.toSeq).filter(_.topic == topic.name)
       } yield record.key -> record.value
   }
@@ -61,15 +63,21 @@ object Catska {
     }
   }
 
-  def consumer[F[_]: Sync, K, V](topic: Topic[K, V], props: Properties): Resource[F, Consumer[F, K, V]] = Resource {
+  def consumer[F[_]: Concurrent, K, V](topic: Topic[K, V], props: Properties): Resource[F, Consumer[F, K, V]] = Resource {
     val create = Sync[F].delay(new KafkaConsumer(props, topic.keyDeserializer, topic.valueDeserializer))
-    create.map { consumer =>
-      val close = Sync[F].delay(consumer.close())
-      (Consumer(consumer), close)
+    (create, Semaphore[F](1)).mapN {
+      case (consumer, semaphore) =>
+        val close = semaphore.withPermitDelay(consumer.close())
+        (Consumer(consumer, semaphore), close)
     }
   }
 
-  def subscribe[F[_]: Sync, K, V](topic: Topic[K, V], props: Properties): Stream[F, (K, V)] =
+  def subscribe[F[_]: Concurrent, K, V](topic: Topic[K, V], props: Properties): Stream[F, (K, V)] =
     Stream.resource(consumer[F, K, V](topic, props)).flatMap(_.subscribe(topic))
+
+  implicit class SemaphoreOps[F[_]](val semaphore: Semaphore[F]) extends AnyVal {
+    def withPermitDelay[A](a: => A)(implicit F: Sync[F]): F[A] =
+      semaphore.withPermit(F.delay(a))
+  }
 
 }
