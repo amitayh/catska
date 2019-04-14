@@ -1,4 +1,4 @@
-# Catska [![Build Status](https://travis-ci.org/amitayh/catska.svg?branch=master)](https://travis-ci.org/amitayh/catska) [![codecov](https://codecov.io/gh/amitayh/catska/branch/master/graph/badge.svg)](https://codecov.io/gh/amitayh/revent)
+# Catska [![Build Status](https://travis-ci.org/amitayh/catska.svg?branch=master)](https://travis-ci.org/amitayh/catska) [![codecov](https://codecov.io/gh/amitayh/catska/branch/master/graph/badge.svg)](https://codecov.io/gh/amitayh/catska)
 
 A thin functional wrapper for Apache Kafka with [Cats](https://typelevel.org/cats/) and [FS2](https://fs2.io/).
 
