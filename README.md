@@ -12,15 +12,14 @@ Catska allows you to easily subscribe to a Kafka topic and get the stream of rec
 ```scala
 import java.util.Properties
 import java.util.UUID
-import org.apache.kafka.common.serialization.Serdes._
+import org.apache.kafka.common.serialization._
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.amitayh.Catska
 import cats.effect.IO
 
-val topic = Catska.Topic(
-  name = "some-topic",
-  keySerde = new StringSerde,
-  valueSerde = new StringSerde)
+val topic = Catska.Topic("some-topic")
+
+implicit val stringDeserializer: Deserializer[String] = new StringDeserializer
 
 val props = new Properties
 props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")

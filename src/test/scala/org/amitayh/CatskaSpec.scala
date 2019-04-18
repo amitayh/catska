@@ -7,19 +7,22 @@ import cats.implicits._
 import org.amitayh.Catska.Topic
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
-import org.apache.kafka.common.serialization.Serdes.StringSerde
+import org.apache.kafka.common.serialization.{Deserializer, Serializer, StringDeserializer, StringSerializer}
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 
 class CatskaSpec(implicit ee: ExecutionEnv) extends Specification with KafkaDockerKit {
 
+  private val topic = Topic("test-topic")
+
   implicit val contextShift: ContextShift[IO] =
     IO.contextShift(ee.executionContext)
 
-  private val topic = Topic(
-    name = "test-topic",
-    keySerde = new StringSerde,
-    valueSerde = new StringSerde)
+  implicit val stringSerializer: Serializer[String] =
+    new StringSerializer
+
+  implicit val stringDeserializer: Deserializer[String] =
+    new StringDeserializer
 
   private val bootstrapServers = s"localhost:$KafkaAdvertisedPort"
 
@@ -37,7 +40,7 @@ class CatskaSpec(implicit ee: ExecutionEnv) extends Specification with KafkaDock
     props
   }
 
-  override val topics: Set[Topic[_, _]] = Set(topic)
+  override val topics: Set[Topic] = Set(topic)
 
   "produce and consume messages from Kafka" in {
     val prog = waitUntilContainerIsReady *>

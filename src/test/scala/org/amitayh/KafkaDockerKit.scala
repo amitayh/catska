@@ -10,7 +10,7 @@ import org.amitayh.Catska.Topic
 
 trait KafkaDockerKit extends DockerTestKit {
 
-  def topics: Set[Topic[_, _]]
+  def topics: Set[Topic]
 
   val KafkaAdvertisedPort = 9092
   val ZookeeperDefaultPort = 2181
